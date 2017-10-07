@@ -62,7 +62,7 @@ func main() {
 		},
 		"-V": func(c string) int {
 			showProgramVersion()
-			return 1
+			return 0
 		},
 	}
 
@@ -80,8 +80,9 @@ func main() {
 			total_num += 1
 			// TODO judge should the -x have a extra param
 			if i+1 < arg_num && []byte(os.Args[i+1])[0] != []byte("-")[0] {
-				argsMap[v] = os.Args[i+1]
-				supportArgsMap[v](os.Args[i+1])
+				if supportArgsMap[v](os.Args[i+1]) == 1 {
+					argsMap[v] = os.Args[i+1]
+				}
 				i += 1
 				//fmt.Println(v, " is got", os.Args[i+1])
 				//fmt.Println(ret)
