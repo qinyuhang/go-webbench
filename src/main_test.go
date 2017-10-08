@@ -43,8 +43,6 @@ func TestInitParam(t *testing.T) {
 }
 
 func TestHTTP(t *testing.T) {
-	// send HTTP
-	//buildRequest("http://www.baidu.com", "GET")
 	var requestParam RequestParam
 	requestParam.init()
 	requestParam.url = "http://www.baidu.com"
@@ -57,8 +55,8 @@ func TestHTTP(t *testing.T) {
 	tr := 0
 	for i := range ch {
 		if i.errNo != 0 {
-			t.Fail()
 			t.Error("FAILED: HTTP request")
+			t.Fail()
 			return
 		}
 		//t.Log(i.errNo)
@@ -69,8 +67,6 @@ func TestHTTP(t *testing.T) {
 }
 
 func TestHTTPs(t *testing.T) {
-	// send HTTPS
-	//buildRequest("https://www.baidu.com", "GET")
 	var requestParam RequestParam
 	requestParam.init()
 	requestParam.url = "https://www.baidu.com"
@@ -82,8 +78,8 @@ func TestHTTPs(t *testing.T) {
 	tr := 0
 	for i := range ch {
 		if i.errNo != 0 {
-			t.Fail()
 			t.Error("FAILED: HTTPs request")
+			t.Fail()
 			return
 		}
 		//t.Log(i)
@@ -109,16 +105,16 @@ func TestHTTP2(t *testing.T) {
 	tr := 0
 	for i := range ch {
 		if i.errNo != 0 {
-			t.Fail()
 			t.Error("FAILED: HTTP/2 request")
+			t.Fail()
 			return
 		}
 		//t.Log(i)
 		tr += 1
 	}
-	t.Log("It is not easy to test support For HTTP/2, just test if the transport is correctely set?")
 	t.Log("PASS: HTTP/2 request")
 }
+
 func TestMultiClient(t *testing.T) {
 	// -c param
 	var requestParam RequestParam
@@ -133,8 +129,8 @@ func TestMultiClient(t *testing.T) {
 	tr := 0
 	for i := range ch {
 		if i.errNo != 0 {
-			t.Fail()
 			t.Error("FAILED: MultiClient request")
+			t.Fail()
 			return
 		}
 		//t.Log(i)
