@@ -48,6 +48,7 @@ func TestHTTP(t *testing.T) {
 	var requestParam RequestParam
 	requestParam.init()
 	requestParam.url = "http://www.baidu.com"
+	requestParam.proto = "HTTP/1.1"
 	requestParam.defaultTime = 1
 	t.Log("\nRequest Param:\n", requestParam)
 	ch := make(chan string)
@@ -85,6 +86,21 @@ func TestHTTPs(t *testing.T) {
 }
 
 func TestHTTP2(t *testing.T) {
+	var requestParam RequestParam
+	requestParam.init()
+	requestParam.url = "https://http2.golang.org/reqinfo"
+	requestParam.defaultTime = 1
+	requestParam.proto = "HTTP/2"
+	t.Log("\nRequest Param:\n", requestParam)
+	ch := make(chan string)
+	cch := make(chan int, 1)
+	go sendHTTPRequest(requestParam, ch, cch, 0)
+	tr := 0
+	for i := range ch {
+		//t.Log(i)
+		i += ""
+		tr += 1
+	}
 	t.Log("It is not easy to test support For HTTP/2, just test if the transport is correctely set?")
 	t.Log("PASS: HTTP/2 request")
 }
