@@ -51,13 +51,17 @@ func TestHTTP(t *testing.T) {
 	requestParam.proto = "HTTP/1.1"
 	requestParam.defaultTime = 1
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan string)
+	ch := make(chan HttpRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
 	for i := range ch {
-		//t.Log(i)
-		i += ""
+		if i.errNo != 0 {
+			t.Fail()
+			t.Error("FAILED: HTTP request")
+			return
+		}
+		//t.Log(i.errNo)
 		tr += 1
 	}
 	t.Log("Send: ", tr, " times requests")
@@ -72,13 +76,17 @@ func TestHTTPs(t *testing.T) {
 	requestParam.url = "https://www.baidu.com"
 	requestParam.defaultTime = 1
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan string)
+	ch := make(chan HttpRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
 	for i := range ch {
+		if i.errNo != 0 {
+			t.Fail()
+			t.Error("FAILED: HTTPs request")
+			return
+		}
 		//t.Log(i)
-		i += ""
 		tr += 1
 	}
 	t.Log("Send: ", tr, " times requests")
@@ -90,15 +98,22 @@ func TestHTTP2(t *testing.T) {
 	requestParam.init()
 	requestParam.url = "https://http2.golang.org/reqinfo"
 	requestParam.defaultTime = 1
-	requestParam.proto = "HTTP/2"
+	requestParam.proto = "HTTP/2.0"
+	requestParam.protoMajor = 2
+	requestParam.protoMinor = 0
+	requestParam.tr = nil
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan string)
+	ch := make(chan HttpRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
 	for i := range ch {
+		if i.errNo != 0 {
+			t.Fail()
+			t.Error("FAILED: HTTP/2 request")
+			return
+		}
 		//t.Log(i)
-		i += ""
 		tr += 1
 	}
 	t.Log("It is not easy to test support For HTTP/2, just test if the transport is correctely set?")
@@ -112,13 +127,17 @@ func TestMultiClient(t *testing.T) {
 	requestParam.defaultTime = 1
 	requestParam.clients = 10
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan string)
+	ch := make(chan HttpRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
 	for i := range ch {
+		if i.errNo != 0 {
+			t.Fail()
+			t.Error("FAILED: MultiClient request")
+			return
+		}
 		//t.Log(i)
-		i += ""
 		tr += 1
 	}
 	t.Log("Send: ", tr, " times requests")
