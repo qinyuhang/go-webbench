@@ -27,23 +27,25 @@ type RequestConst struct {
 	method      string
 	defaultTime int
 	verbose     bool
+	url         string
 }
 
 var supportArgsMap map[string]func(c string) int
 
 var requestConst RequestConst
 
-func initRequestConst() {
+func initRequestConst(requestConst RequestConst) {
 	// init request params
 	requestConst.clients = 1
 	requestConst.ua = PROGRAM_NAME + PROGRAM_VERSION
 	requestConst.method = "GET"
 	requestConst.defaultTime = 30
 	requestConst.verbose = false
+	requestConst.url = ""
 }
 
 func main() {
-	initRequestConst()
+	initRequestConst(requestConst)
 	//fmt.Println(requestConst)
 
 	// program consts
@@ -53,10 +55,9 @@ func main() {
 	}
 	var coordinateCh chan int
 	var ch chan string
-	var arg_num int
-	var total_num int
-	var requestURL string
-	var total_request uint64
+	var argsCount int
+	var usefulArgsCount int
+	var totalRequestCount uint64
 
 	argsMap := make(map[string]string)
 
@@ -156,18 +157,17 @@ func main() {
 	}
 
 	// main program
-	arg_num = len(os.Args)
-	total_num = 0
-	requestURL = ""
+	argsCount = len(os.Args)
+	usefulArgsCount = 0
 	//fmt.Println(userAgentMap["iOSWechat"])
 	// Starting the main program
 	fmt.Println("GoWebbanch versioin ", PROGRAM_VERSION)
-	for i := 0; i < arg_num; i += 1 {
+	for i := 0; i < argsCount; i += 1 {
 		v := os.Args[i]
 		//fmt.Println(i, v)
 		if supportArgsMap[v] != nil {
-			total_num += 1
-			if i+1 < arg_num && []byte(os.Args[i+1])[0] != []byte("-")[0] {
+			usefulArgsCount += 1
+			if i+1 < argsCount && []byte(os.Args[i+1])[0] != []byte("-")[0] {
 				// has next param and next param is not start with "-"
 				if supportArgsMap[v](os.Args[i+1]) == 1 {
 					argsMap[v] = os.Args[i+1]
@@ -186,8 +186,8 @@ func main() {
 			re1 := regexp.MustCompile("^https://")
 			if re.Find([]byte(v)) != nil || re1.Find([]byte(v)) != nil {
 				// Have url
-				total_num += 1
-				requestURL = v
+				usefulArgsCount += 1
+				requestConst.url = v
 			} else {
 				//no url
 				fmt.Println("GoWebbench missing url!")
@@ -196,7 +196,7 @@ func main() {
 			}
 		}
 	}
-	if total_num == 0 {
+	if usefulArgsCount == 0 {
 		usage()
 		return
 	}
@@ -207,21 +207,21 @@ func main() {
 	if requestConst.clients != 0 {
 		//fmt.Println(requestConst)
 		for i := 0; i < requestConst.clients; i += 1 {
-			go sendHTTPRequest(requestURL, ch, coordinateCh, i)
+			go sendHTTPRequest(requestConst.url, ch, coordinateCh, i)
 		}
 	}
 	//for i := 0; i < requestConst.clients; i += 1 {
 	//	fmt.Println(<-ch)
 	//}
-	total_request = 0
+	totalRequestCount = 0
 	for i := range ch {
 		if requestConst.verbose {
 			fmt.Println(i)
 		}
-		total_request += 1
+		totalRequestCount += 1
 	}
-	fmt.Println("Total request", total_request, "in", requestConst.defaultTime, "s")
-	fmt.Println("Speed is", total_request/uint64(requestConst.defaultTime), "pages per second")
+	fmt.Println("Total request", totalRequestCount, "in", requestConst.defaultTime, "s")
+	fmt.Println("Speed is", totalRequestCount/uint64(requestConst.defaultTime), "pages per second")
 }
 
 func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label int) int {
