@@ -35,9 +35,19 @@ var PROGRAM_VERSION string = "0.1"
 var PROGRAM_NAME string = "GoWebbench"
 
 type HttpRes struct {
+	// this Data type is suppose to be the data type that
+	// all sendHttpRequest func put in first ch
+	// main func take out of the value
+	// and see if the is a error or not
+	// if error stop the program and display error
+	// if not show the showText in console
 	showText string
-	resCode  int
-	resp     *http.Response
+
+	// resCode is response.StatusCode
+	resCode int
+
+	// resp is pointer to the response of the request
+	resp *http.Response
 }
 
 func (h *HttpRes) init(showText string, resp *http.Response) {
@@ -47,14 +57,29 @@ func (h *HttpRes) init(showText string, resp *http.Response) {
 }
 
 type RequestParam struct {
-	clients     int
-	ua          string
-	method      string
+	// How many clients running
+	clients int
+
+	// user agent
+	ua string
+
+	// request Method
+	method string
+
+	// how long does the request running
 	defaultTime int
-	verbose     bool
-	url         string
-	proto       string
-	tr          *http.Transport
+
+	// should show verbose info in console?
+	verbose bool
+
+	// request url
+	url string
+
+	// request protocol now support HTTP/1.1 HTTP/2
+	proto string
+
+	// http Transport object
+	tr *http.Transport
 }
 
 func (requestParam *RequestParam) init() {
@@ -317,6 +342,8 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 					//fmt.Println(resp.StatusCode)
 					//fmt.Println(resp.ContentLength)
 					// TODO if HTTP Proto version is given and res version not match should fail
+					// TODO what failed DO? send Error struct in ch and send label to coordinateCh
+					// TODO and if the coordinateCh if full close above 2 channels
 					//fmt.Println(resp.Proto)
 					_, err := ioutil.ReadAll(resp.Body)
 					resp.Body.Close()
