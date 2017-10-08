@@ -19,11 +19,26 @@ import (
 )
 
 var PROGRAM_VERSION string = "0.1"
+var PROGRAM_NAME string = "GoWebbench"
+
+type RequestConst struct {
+	clients     int
+	ua          string
+	method      string
+	defaultTime int
+	verbose     bool
+}
+
+var requestConst RequestConst
 
 func main() {
-	// request params
-	var clients int = 1
-	var ua string
+	// init request params
+	requestConst.clients = 1
+	requestConst.ua = PROGRAM_NAME + PROGRAM_VERSION
+	requestConst.method = "GET"
+	requestConst.defaultTime = 30
+	requestConst.verbose = false
+	//fmt.Println(requestConst)
 
 	// program consts
 	type safeCounter struct {
@@ -45,10 +60,10 @@ func main() {
 			// clients
 			res, ok := strconv.Atoi(c)
 			if ok != nil {
-				clients = 0
+				requestConst.clients = 0
 				syncCh = nil
 			} else {
-				clients = res
+				requestConst.clients = res
 				syncCh = make(chan int, res)
 			}
 			return 1
@@ -57,12 +72,31 @@ func main() {
 			return 1
 		},
 		"-u": func(c string) int {
-			ua = userAgentMap[c]
+			requestConst.ua = userAgentMap[c]
 			return 1
 		},
 		"-V": func(c string) int {
 			showProgramVersion()
 			return 0
+		},
+		"-1": func(c string) int {
+			// HTTP1
+			return 0
+		},
+		"-1.1": func(c string) int {
+			// HTTP 1.1
+			return 0
+		},
+		"-2": func(c string) int {
+			// HTTP2
+			return 0
+		},
+		"-t": func(c string) int {
+			t, err := strconv.Atoi(c)
+			if err == nil {
+				requestConst.defaultTime = t
+			}
+			return 1
 		},
 	}
 
@@ -108,47 +142,76 @@ func main() {
 		return
 	}
 	ch := make(chan string)
+	coordinateCh := make(chan int, requestConst.clients)
 	//failCh := make(chan string)
-	if clients != 0 {
-		for i := 0; i < clients; i += 1 {
-			go sendHTTPRequest(requestURL, ua, ch)
+	if requestConst.clients != 0 {
+		for i := 0; i < requestConst.clients; i += 1 {
+			go sendHTTPRequest(requestURL, ch, coordinateCh, i)
 		}
 	}
-	for i := 0; i < clients; i += 1 {
-		fmt.Println(<-ch)
+	//for i := 0; i < requestConst.clients; i += 1 {
+	//	fmt.Println(<-ch)
+	//}
+	total_request := 0
+	for i := range ch {
+		if requestConst.verbose {
+			fmt.Println(i)
+		}
+		total_request += 1
 	}
+	fmt.Println("Total request ", total_request, " in ", requestConst.defaultTime, "s")
+	fmt.Println("Speed is", total_request/requestConst.defaultTime, " pages per second")
 }
 
-func sendHTTPRequest(url string, header string, ch chan<- string) int {
-	// should return a struct that contain the res time and result
-	startTime := time.Now()
-	client := &http.Client{}
-	reqBody := buildRequest(url)
+func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label int) int {
+	// should put a struct that contain the res time and result in the res channel
+	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestConst.defaultTime) + "s")
+	if reqDErr == nil {
+		//fmt.Println(requestDuration)
+		//timeout := time.NewTimer(requestDuration)
+		routineStartTime := time.Now()
+		client := &http.Client{}
+	Loop:
+		for {
+			if time.Since(routineStartTime) < requestDuration {
+				requestStartTime := time.Now()
+				reqBody := buildRequest(url, requestConst.method)
 
-	resp, err := client.Do(reqBody)
+				resp, err := client.Do(reqBody)
 
-	if err != nil {
-		// push a failed state to a counter
-		ch <- fmt.Sprintf("%s%s", "Error ", err)
-	} else {
-		//fmt.Println(resp.Body)
-		_, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			log.Fatal(err)
+				if err != nil {
+					// push a failed state to a counter
+					ch <- fmt.Sprintf("%s%s Label %s", "Error ", err, label)
+				} else {
+					//fmt.Println(resp.Body)
+					_, err := ioutil.ReadAll(resp.Body)
+					resp.Body.Close()
+					if err != nil {
+						log.Fatal(err)
+					}
+					//fmt.Printf("%s", robots)
+					endTime := time.Since(requestStartTime).Seconds()
+					ret := fmt.Sprint("Label", label, " Fetch url ", url, " runing ", endTime, "s")
+					ch <- ret
+				}
+			} else {
+				coordinateCh <- label
+				// 本 goroutine 放到coordinateCh 之后如果
+				if cap(coordinateCh) == len(coordinateCh) {
+					<-coordinateCh
+					close(coordinateCh)
+					close(ch)
+				}
+				break Loop
+			}
 		}
-		//fmt.Printf("%s", robots)
-		endTime := time.Since(startTime).Seconds()
-		ret := fmt.Sprint("Fetch url ", url, " runing ", endTime, "s")
-		ch <- ret
 	}
-	//fmt.Println(ret)
 	return 1
 }
 
-func buildRequest(url string) *http.Request {
+func buildRequest(url string, method string) *http.Request {
 	// maybe should change the requestBody from string to *http.request
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil
 	}
