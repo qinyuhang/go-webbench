@@ -1,7 +1,19 @@
-// webbench based on go language
-// mainly with webbench on C
-// add support for HTTPS
-// and add support for HTTP/2
+//
+// (C) qinyuhangxiaoxiang@gmail.com 2017
+// This is free software, see GNU Public License version 3 for
+// details.
+//
+// Webbench based on go language
+// mainly same with Webbench on C (see https://github.com/qinyuhang/WebBench/)
+//
+// Add support for HTTPs
+// And will support HTTP/2
+//
+// Usage:
+//   webbench -h
+//
+//
+//
 package main
 
 import (
@@ -42,6 +54,17 @@ func (requestParam *RequestParam) init() {
 	requestParam.defaultTime = 30
 	requestParam.verbose = false
 	requestParam.url = ""
+}
+
+func (requestParam RequestParam) String() string {
+	return fmt.Sprint(
+		"clients: ", requestParam.clients, "\n",
+		"ua: ", requestParam.ua, "\n",
+		"url: ", requestParam.url, "\n",
+		"method: ", requestParam.method, "\n",
+		"isVerbose: ", requestParam.verbose, "\n",
+		"runningTime: ", requestParam.defaultTime, "\n",
+	)
 }
 
 func initUAMap(userAgentMap *map[string]string) {
