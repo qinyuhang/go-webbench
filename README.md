@@ -1,5 +1,7 @@
 # gowebbench - refine webbench in C
 
+Travis CI: [![Travis CI](https://travis-ci.org/qinyuhang/go-webbench.svg?branch=master)](https://travis-ci.org/qinyuhang/go-webbench)
+
 See [Webbench written in C](https://github.com/qinyuhang/WebBench/)
 
 This is a free software, see GNU Public License version 3 for details.
