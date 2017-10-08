@@ -68,7 +68,7 @@ func main() {
 		"Android":       "User-Agent: Mozilla/5.0 (Linux; Android 4.4.2; HUAWEI G750-T20 Build/HuaweiG750-T20) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36",
 	}
 
-	supportArgsMap := map[string]func(c string) int{
+	supportArgsMap = map[string]func(c string) int{
 		"-c": func(c string) int {
 			// clients
 			if res, ok := strconv.Atoi(c); ok == nil {
