@@ -44,6 +44,15 @@ func (requestParam *RequestParam) init() {
 	requestParam.url = ""
 }
 
+func initUAMap(userAgentMap *map[string]string) {
+	*userAgentMap = map[string]string{
+		"iOSWechat":     "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 9_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13C75 MicroMessager/6.3.9",
+		"AndroidWechat": "User-Agent: Mozilla/5.0 (Linux; Android 4.4.2; HUAWEI G750-T20 Build/HuaweiG750-T20) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile MicroMessager/6.3.9 NetType/WIFI Language/zh_CN",
+		"iOS9_2":        "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 9_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13C75",
+		"Android":       "User-Agent: Mozilla/5.0 (Linux; Android 4.4.2; HUAWEI G750-T20 Build/HuaweiG750-T20) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36",
+	}
+}
+
 func main() {
 	requestParam.init()
 	//fmt.Println(requestParam)
@@ -61,12 +70,8 @@ func main() {
 
 	argsMap := make(map[string]string)
 
-	userAgentMap := map[string]string{
-		"iOSWechat":     "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 9_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13C75 MicroMessager/6.3.9",
-		"AndroidWechat": "User-Agent: Mozilla/5.0 (Linux; Android 4.4.2; HUAWEI G750-T20 Build/HuaweiG750-T20) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile MicroMessager/6.3.9 NetType/WIFI Language/zh_CN",
-		"iOS9_2":        "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 9_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13C75",
-		"Android":       "User-Agent: Mozilla/5.0 (Linux; Android 4.4.2; HUAWEI G750-T20 Build/HuaweiG750-T20) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36",
-	}
+	userAgentMap := make(map[string]string)
+	initUAMap(&userAgentMap)
 
 	supportArgsMap = map[string]func(c string) int{
 		"-c": func(c string) int {
@@ -236,7 +241,7 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 		for {
 			if time.Since(routineStartTime) < requestDuration {
 				requestStartTime := time.Now()
-				reqBody := buildRequest(requestParam.url, requestParam.method)
+				reqBody := buildRequest(requestParam)
 
 				resp, err := client.Do(reqBody)
 
@@ -274,14 +279,14 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 	return 1
 }
 
-func buildRequest(url string, method string) *http.Request {
+func buildRequest(requestParam RequestParam) *http.Request {
 	// maybe should change the requestBody from string to *http.request
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(requestParam.method, requestParam.url, nil)
 	//fmt.Println(method)
 	if err != nil {
 		return nil
 	}
-	req.Header.Add("User-Agent", fmt.Sprint("GoWebbanch versioin ", PROGRAM_VERSION))
+	req.Header.Add("User-Agent", requestParam.ua)
 	return req
 }
 
