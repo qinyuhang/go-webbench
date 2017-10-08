@@ -89,6 +89,10 @@ type RequestParam struct {
 	// request protocol now support HTTP/1.1 HTTP/2
 	proto string
 
+	protoMajor int
+
+	protoMinor int
+
 	// http Transport object
 	tr *http.Transport
 }
@@ -101,8 +105,12 @@ func (requestParam *RequestParam) init() {
 	requestParam.defaultTime = 30
 	requestParam.verbose = false
 	requestParam.url = ""
-	requestParam.proto = "HTTP/2"
-	requestParam.tr = nil
+	requestParam.proto = "HTTP/1.1"
+	requestParam.protoMajor = 1
+	requestParam.protoMinor = 1
+	requestParam.tr = &http.Transport{
+		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+	}
 }
 
 func (requestParam RequestParam) String() string {
@@ -111,6 +119,7 @@ func (requestParam RequestParam) String() string {
 		"ua: ", requestParam.ua, "\n",
 		"url: ", requestParam.url, "\n",
 		"method: ", requestParam.method, "\n",
+		"protocol: ", requestParam.proto, "\n",
 		"isVerbose: ", requestParam.verbose, "\n",
 		"runningTime: ", requestParam.defaultTime, "\n",
 	)
@@ -148,15 +157,20 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		"-1": func(c string) int {
 			// HTTP1
 			requestParam.proto = "HTTP/1.0"
+			requestParam.protoMajor = 1
+			requestParam.protoMinor = 0
 			// disable HTTP2
 			requestParam.tr = &http.Transport{
-				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+				DisableKeepAlives: false,
+				TLSNextProto:      make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 			}
 			return 0
 		},
 		"-1.1": func(c string) int {
 			// HTTP 1.1
 			requestParam.proto = "HTTP/1.1"
+			requestParam.protoMajor = 1
+			requestParam.protoMinor = 1
 			// disable HTTP/2
 			requestParam.tr = &http.Transport{
 				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
@@ -165,7 +179,10 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		},
 		"-2": func(c string) int {
 			// HTTP2
-			requestParam.proto = "HTTP/2"
+			requestParam.proto = "HTTP/2.0"
+			requestParam.protoMajor = 2
+			requestParam.protoMinor = 0
+			requestParam.tr = nil
 			return 0
 		},
 		"-t": func(c string) int {
@@ -233,7 +250,7 @@ func main() {
 
 	// program consts
 	var coordinateCh chan int
-	var ch chan string
+	var ch chan HttpRes
 	var argsCount int
 	var usefulArgsCount int
 	var totalRequestCount uint64
@@ -291,7 +308,7 @@ func main() {
 		return
 	}
 	// init all channels
-	ch = make(chan string)
+	ch = make(chan HttpRes)
 	coordinateCh = make(chan int, requestParam.clients)
 	//failCh := make(chan string)
 	if requestParam.clients != 0 {
@@ -304,21 +321,31 @@ func main() {
 	//	fmt.Println(<-ch)
 	//}
 	totalRequestCount = 0
+	var totalRequestSize int64 = 0
 	for i := range ch {
 		if requestParam.verbose {
 			fmt.Println(i)
 		}
+		if i.errNo != 0 {
+			fmt.Print("\n", i.errMsg, "\n")
+			return
+		}
+		if i.resp.ContentLength != -1 {
+			totalRequestSize += i.resp.ContentLength
+		}
 		totalRequestCount += 1
 	}
 	fmt.Println("Total request", totalRequestCount, "in", requestParam.defaultTime, "s")
-	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages per second")
+	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages/sec")
+	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime)*60, "pages/min")
+	fmt.Println("Speed is", totalRequestSize/int64(requestParam.defaultTime), "bytes/sec")
 }
 
 func httpCodeHandler(httpCode int) {
 
 }
 
-func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh chan int, label int) int {
+func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh chan int, label int) int {
 	// should put a struct that contain the res time and result in the res channel
 	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestParam.defaultTime) + "s")
 	if reqDErr == nil {
@@ -344,10 +371,17 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 
 				resp, err := client.Do(reqBody)
 
+				var resData HttpRes
 				if err != nil {
 					// push a failed state to a counter
 					// TODO not only put this in but alsof signal the main goroutine it has a error
-					ch <- fmt.Sprintf("%s%s Label %s", "Error ", err, label)
+					resData.init(
+						fmt.Sprintf("%s%s Label %s", "Error ", err, label),
+						resp,
+						1,
+						fmt.Sprintf("%s%s Label %s", "Error ", err, label),
+					)
+					ch <- resData
 				} else {
 					//fmt.Println(resp.Body)
 					//fmt.Println(resp.StatusCode)
@@ -356,15 +390,31 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 					// TODO what failed DO? send Error struct in ch and send label to coordinateCh
 					// TODO and if the coordinateCh if full close above 2 channels
 					//fmt.Println(resp.Proto)
-					_, err := ioutil.ReadAll(resp.Body)
+					//fmt.Println(resp.Request.Proto)
+					//fmt.Println(resp.Request.Proto == resp.Proto)
+					errNo := 0
+					errMsg := ""
+					if resp.Request.Proto != resp.Proto {
+						errNo = 1
+						errMsg = fmt.Sprint("Failed! Response Protocol Not match, want ", resp.Request.Proto, " get ", resp.Proto)
+					}
+					respBody, err := ioutil.ReadAll(resp.Body)
 					resp.Body.Close()
 					if err != nil {
 						log.Fatal(err)
 					}
+					if resp.ContentLength == -1 {
+						resp.ContentLength = int64(len(respBody))
+					}
 					//fmt.Printf("%s", robots)
 					endTime := time.Since(requestStartTime).Seconds()
-					ret := fmt.Sprint("Client No.", label, ",Fetch url ", requestParam.url, ",runing ", endTime, "s")
-					ch <- ret
+					resData.init(
+						fmt.Sprint("Client No.", label, ",Fetch url ", requestParam.url, ",runing ", endTime, "s"),
+						resp,
+						errNo,
+						errMsg,
+					)
+					ch <- resData
 				}
 			} else {
 				coordinateCh <- label
@@ -392,6 +442,8 @@ func buildRequest(requestParam RequestParam) *http.Request {
 		return nil
 	}
 	req.Proto = requestParam.proto
+	req.ProtoMajor = requestParam.protoMajor
+	req.ProtoMinor = requestParam.protoMinor
 	req.Header.Add("User-Agent", requestParam.ua)
 	return req
 }
