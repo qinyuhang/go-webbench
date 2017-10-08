@@ -4,8 +4,7 @@ go:
     - master
 
 script:
-    make
-    make gotest
+    make && make gotest
 
 notifications:
 
