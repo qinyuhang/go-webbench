@@ -21,7 +21,7 @@ import (
 var PROGRAM_VERSION string = "0.1"
 var PROGRAM_NAME string = "GoWebbench"
 
-type RequestConst struct {
+type RequestParam struct {
 	clients     int
 	ua          string
 	method      string
@@ -32,21 +32,21 @@ type RequestConst struct {
 
 var supportArgsMap map[string]func(c string) int
 
-var requestConst RequestConst
+var requestParam RequestParam
 
-func initRequestConst(requestConst RequestConst) {
+func initRequestParam(requestParam RequestParam) {
 	// init request params
-	requestConst.clients = 1
-	requestConst.ua = PROGRAM_NAME + PROGRAM_VERSION
-	requestConst.method = "GET"
-	requestConst.defaultTime = 30
-	requestConst.verbose = false
-	requestConst.url = ""
+	requestParam.clients = 1
+	requestParam.ua = PROGRAM_NAME + PROGRAM_VERSION
+	requestParam.method = "GET"
+	requestParam.defaultTime = 30
+	requestParam.verbose = false
+	requestParam.url = ""
 }
 
 func main() {
-	initRequestConst(requestConst)
-	//fmt.Println(requestConst)
+	initRequestParam(requestParam)
+	//fmt.Println(requestParam)
 
 	// program consts
 	type safeCounter struct {
@@ -72,7 +72,7 @@ func main() {
 		"-c": func(c string) int {
 			// clients
 			if res, ok := strconv.Atoi(c); ok == nil {
-				requestConst.clients = res
+				requestParam.clients = res
 			}
 			return 1
 		},
@@ -80,7 +80,7 @@ func main() {
 			return 1
 		},
 		"-u": func(c string) int {
-			requestConst.ua = userAgentMap[c]
+			requestParam.ua = userAgentMap[c]
 			return 1
 		},
 		"-V": func(c string) int {
@@ -102,48 +102,48 @@ func main() {
 		"-t": func(c string) int {
 			t, err := strconv.Atoi(c)
 			if err == nil {
-				requestConst.defaultTime = t
+				requestParam.defaultTime = t
 			}
 			return 1
 		},
 		"--get": func(c string) int {
-			requestConst.method = "GET"
+			requestParam.method = "GET"
 			return 0
 		},
 		"--post": func(c string) int {
-			requestConst.method = "POST"
+			requestParam.method = "POST"
 			return 0
 		},
 		"--head": func(c string) int {
-			requestConst.method = "HEAD"
+			requestParam.method = "HEAD"
 			return 0
 		},
 		"--options": func(c string) int {
-			requestConst.method = "OPTIONS"
+			requestParam.method = "OPTIONS"
 			return 0
 		},
 		"--delete": func(c string) int {
-			requestConst.method = "DELETE"
+			requestParam.method = "DELETE"
 			return 0
 		},
 		"--put": func(c string) int {
-			requestConst.method = "PUT"
+			requestParam.method = "PUT"
 			return 0
 		},
 		"--trace": func(c string) int {
-			requestConst.method = "TRACE"
+			requestParam.method = "TRACE"
 			return 0
 		},
 		"--connect": func(c string) int {
-			requestConst.method = "CONNECT"
+			requestParam.method = "CONNECT"
 			return 0
 		},
 		"--patch": func(c string) int {
-			requestConst.method = "PATCH"
+			requestParam.method = "PATCH"
 			return 0
 		},
 		"-v": func(c string) int {
-			requestConst.verbose = true
+			requestParam.verbose = true
 			return 0
 		},
 		"-h": func(c string) int {
@@ -187,7 +187,7 @@ func main() {
 			if re.Find([]byte(v)) != nil || re1.Find([]byte(v)) != nil {
 				// Have url
 				usefulArgsCount += 1
-				requestConst.url = v
+				requestParam.url = v
 			} else {
 				//no url
 				fmt.Println("GoWebbench missing url!")
@@ -202,31 +202,31 @@ func main() {
 	}
 	// init all channels
 	ch = make(chan string)
-	coordinateCh = make(chan int, requestConst.clients)
+	coordinateCh = make(chan int, requestParam.clients)
 	//failCh := make(chan string)
-	if requestConst.clients != 0 {
-		//fmt.Println(requestConst)
-		for i := 0; i < requestConst.clients; i += 1 {
-			go sendHTTPRequest(requestConst.url, ch, coordinateCh, i)
+	if requestParam.clients != 0 {
+		//fmt.Println(requestParam)
+		for i := 0; i < requestParam.clients; i += 1 {
+			go sendHTTPRequest(requestParam.url, ch, coordinateCh, i)
 		}
 	}
-	//for i := 0; i < requestConst.clients; i += 1 {
+	//for i := 0; i < requestParam.clients; i += 1 {
 	//	fmt.Println(<-ch)
 	//}
 	totalRequestCount = 0
 	for i := range ch {
-		if requestConst.verbose {
+		if requestParam.verbose {
 			fmt.Println(i)
 		}
 		totalRequestCount += 1
 	}
-	fmt.Println("Total request", totalRequestCount, "in", requestConst.defaultTime, "s")
-	fmt.Println("Speed is", totalRequestCount/uint64(requestConst.defaultTime), "pages per second")
+	fmt.Println("Total request", totalRequestCount, "in", requestParam.defaultTime, "s")
+	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages per second")
 }
 
 func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label int) int {
 	// should put a struct that contain the res time and result in the res channel
-	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestConst.defaultTime) + "s")
+	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestParam.defaultTime) + "s")
 	if reqDErr == nil {
 		//fmt.Println(requestDuration)
 		//timeout := time.NewTimer(requestDuration)
@@ -236,7 +236,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 		for {
 			if time.Since(routineStartTime) < requestDuration {
 				requestStartTime := time.Now()
-				reqBody := buildRequest(url, requestConst.method)
+				reqBody := buildRequest(url, requestParam.method)
 
 				resp, err := client.Do(reqBody)
 
