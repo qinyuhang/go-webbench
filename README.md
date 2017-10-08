@@ -1,6 +1,6 @@
 # gowebbench - refine webbench in C
 
-Travis CI: [![Travis CI](https://travis-ci.org/qinyuhang/go-webbench.svg?branch=master)](https://travis-ci.org/qinyuhang/go-webbench)
+Travis CI: [![Build Status](https://travis-ci.org/qinyuhang/go-webbench.svg?branch=master)](https://travis-ci.org/qinyuhang/go-webbench)
 
 See [Webbench written in C](https://github.com/qinyuhang/WebBench/)
 
