@@ -258,9 +258,12 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 				}
 			} else {
 				coordinateCh <- label
-				// 本 goroutine 放到coordinateCh 之后如果
 				if cap(coordinateCh) == len(coordinateCh) {
-					<-coordinateCh
+					// 本 goroutine 放到coordinateCh 之后如果协作channel已满，则表示本goroutine是最后一个完成的
+					for i := 0; i < len(coordinateCh); i += 1 {
+						// 取出所有协作channel的值
+						<-coordinateCh
+					}
 					close(coordinateCh)
 					close(ch)
 				}
