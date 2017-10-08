@@ -134,6 +134,18 @@ func main() {
 			requestConst.method = "PATCH"
 			return 0
 		},
+		"-v": func(c string) int {
+			requestConst.verbose = true
+			return 0
+		},
+		"-h": func(c string) int {
+			usage()
+			return 0
+		},
+		"-?": func(c string) int {
+			usage()
+			return 0
+		},
 	}
 
 	// main program
@@ -221,6 +233,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 
 				if err != nil {
 					// push a failed state to a counter
+					// TODO not only put this in but alsof signal the main goroutine it has a error
 					ch <- fmt.Sprintf("%s%s Label %s", "Error ", err, label)
 				} else {
 					//fmt.Println(resp.Body)
@@ -231,7 +244,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 					}
 					//fmt.Printf("%s", robots)
 					endTime := time.Since(requestStartTime).Seconds()
-					ret := fmt.Sprint("Label", label, " Fetch url ", url, " runing ", endTime, "s")
+					ret := fmt.Sprint("Client No.", label, ",Fetch url ", url, ",runing ", endTime, "s")
 					ch <- ret
 				}
 			} else {
@@ -273,10 +286,10 @@ func usage() {
 		"  -1|--http10              Use HTTP/1.0 protocol.\n",
 		"  -2|--http11              Use HTTP/1.1 protocol.\n",
 		"  -u|--User-Agent          Change User-Agent.\n",
-		"  1 for WeCaht iPhone\t 2 for WeChat Android\t 3 for iPhone Safari\n",
-		"  4 for Android Chrome\t 5 for Windows IE11\t 6 for Windows IE10\n",
-		"  7 for Windows Edge\t 8 for Windows Chrome\t 9 for Windows FireFox\n",
-		"  10 for Mac Safari\t 11 for Mac Chrome\t 12 for Mac FireFox\n",
+		"  \t 1 for WeCaht iPhone\t 2 for WeChat Android\t 3 for iPhone Safari\n",
+		"  \t 4 for Android Chrome\t 5 for Windows IE11\t 6 for Windows IE10\n",
+		"  \t 7 for Windows Edge\t 8 for Windows Chrome\t 9 for Windows FireFox\n",
+		"  \t 10 for Mac Safari\t 11 for Mac Chrome\t 12 for Mac FireFox\n",
 		"  Empty for WebBench Program Version.\n",
 		"  --get                    Use GET request method.\n",
 		"  --head                   Use HEAD request method.\n",
@@ -288,7 +301,8 @@ func usage() {
 		"  --connect                Use CONNECT request method.\n",
 		"  --patch                  Use PATCH request method.\n",
 		"  -?|-h|--help             This information.\n",
-		"  -V|--version             Display program version.\n")
+		"  -V|--version             Display program version.\n",
+		"  -v|--verbose             Show Every Request.\n")
 	fmt.Println(x)
 }
 
