@@ -1,6 +1,8 @@
 # gowebbench - refine webbench in C
 
-this software is licence under GPLv3
+See [Webbench written in C](https://github.com/qinyuhang/WebBench/)
+
+This is a free software, see GNU Public License version 3 for details.
 
 ## Usage
 ```
@@ -9,7 +11,7 @@ this software is licence under GPLv3
 
 ## Show Help
 ```
-./main
+./main -h
 ```
 
 ## How To build
