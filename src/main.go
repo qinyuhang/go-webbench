@@ -98,6 +98,42 @@ func main() {
 			}
 			return 1
 		},
+		"--get": func(c string) int {
+			requestConst.method = "GET"
+			return 0
+		},
+		"--post": func(c string) int {
+			requestConst.method = "POST"
+			return 0
+		},
+		"--head": func(c string) int {
+			requestConst.method = "HEAD"
+			return 0
+		},
+		"--options": func(c string) int {
+			requestConst.method = "OPTIONS"
+			return 0
+		},
+		"--delete": func(c string) int {
+			requestConst.method = "DELETE"
+			return 0
+		},
+		"--put": func(c string) int {
+			requestConst.method = "PUT"
+			return 0
+		},
+		"--trace": func(c string) int {
+			requestConst.method = "TRACE"
+			return 0
+		},
+		"--connect": func(c string) int {
+			requestConst.method = "CONNECT"
+			return 0
+		},
+		"--patch": func(c string) int {
+			requestConst.method = "PATCH"
+			return 0
+		},
 	}
 
 	// main program
@@ -120,6 +156,9 @@ func main() {
 				i += 1
 				//fmt.Println(v, " is got", os.Args[i+1])
 				//fmt.Println(ret)
+			} else {
+				// --options .etc will go here
+				supportArgsMap[v]("")
 			}
 		} else if i != 0 {
 			// i != 0 去除 os.Args 中程序名 等等的干扰
@@ -145,6 +184,7 @@ func main() {
 	coordinateCh := make(chan int, requestConst.clients)
 	//failCh := make(chan string)
 	if requestConst.clients != 0 {
+		//fmt.Println(requestConst)
 		for i := 0; i < requestConst.clients; i += 1 {
 			go sendHTTPRequest(requestURL, ch, coordinateCh, i)
 		}
@@ -212,6 +252,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 func buildRequest(url string, method string) *http.Request {
 	// maybe should change the requestBody from string to *http.request
 	req, err := http.NewRequest(method, url, nil)
+	//fmt.Println(method)
 	if err != nil {
 		return nil
 	}
@@ -241,10 +282,11 @@ func usage() {
 		"  --head                   Use HEAD request method.\n",
 		"  --options                Use OPTIONS request method.\n",
 		"  --trace                  Use TRACE request method.\n",
-		"  --post                   Use TRACE request method.\n",
-		"  --delet                  Use TRACE request method.\n",
-		"  --put                    Use TRACE request method.\n",
-		"  --connect                Use TRACE request method.\n",
+		"  --post                   Use POST request method.\n",
+		"  --delet                  Use DELETE request method.\n",
+		"  --put                    Use PUT request method.\n",
+		"  --connect                Use CONNECT request method.\n",
+		"  --patch                  Use PATCH request method.\n",
 		"  -?|-h|--help             This information.\n",
 		"  -V|--version             Display program version.\n")
 	fmt.Println(x)
