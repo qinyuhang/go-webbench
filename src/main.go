@@ -48,12 +48,23 @@ type HttpRes struct {
 
 	// resp is pointer to the response of the request
 	resp *http.Response
+
+	// errNo could be 0, 1
+	// if 0 no error
+	// if 1 has error detail see errMsg
+	errNo int
+
+	// if no error errMsg = ""
+	// or errMsg show what error is
+	errMsg string
 }
 
-func (h *HttpRes) init(showText string, resp *http.Response) {
+func (h *HttpRes) init(showText string, resp *http.Response, errNo int, errMsg string) {
 	h.showText = showText
 	h.resCode = resp.StatusCode
 	h.resp = resp
+	h.errNo = errNo
+	h.errMsg = errMsg
 }
 
 type RequestParam struct {
