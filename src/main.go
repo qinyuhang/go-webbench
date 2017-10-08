@@ -17,6 +17,7 @@
 package main
 
 import (
+	"crypto/tls"
 	_ "encoding/json"
 	_ "encoding/xml"
 	"fmt"
@@ -40,6 +41,8 @@ type RequestParam struct {
 	defaultTime int
 	verbose     bool
 	url         string
+	proto       string
+	tr          *http.Transport
 }
 
 var supportArgsMap map[string]func(c string) int
@@ -54,6 +57,8 @@ func (requestParam *RequestParam) init() {
 	requestParam.defaultTime = 30
 	requestParam.verbose = false
 	requestParam.url = ""
+	requestParam.proto = "HTTP/2"
+	requestParam.tr = nil
 }
 
 func (requestParam RequestParam) String() string {
@@ -117,14 +122,25 @@ func main() {
 		},
 		"-1": func(c string) int {
 			// HTTP1
+			requestParam.proto = "HTTP/1.0"
+			// disable HTTP2
+			requestParam.tr = &http.Transport{
+				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+			}
 			return 0
 		},
 		"-1.1": func(c string) int {
 			// HTTP 1.1
+			requestParam.proto = "HTTP/1.1"
+			// disable HTTP/2
+			requestParam.tr = &http.Transport{
+				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+			}
 			return 0
 		},
 		"-2": func(c string) int {
 			// HTTP2
+			requestParam.proto = "HTTP/2"
 			return 0
 		},
 		"-t": func(c string) int {
@@ -252,6 +268,10 @@ func main() {
 	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages per second")
 }
 
+func httpCodeHandler(httpCode int) {
+
+}
+
 func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh chan int, label int) int {
 	// should put a struct that contain the res time and result in the res channel
 	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestParam.defaultTime) + "s")
@@ -259,7 +279,17 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 		//fmt.Println(requestDuration)
 		//timeout := time.NewTimer(requestDuration)
 		routineStartTime := time.Now()
-		client := &http.Client{}
+		var client *http.Client
+		if requestParam.tr != nil {
+			client = &http.Client{
+				Timeout:   time.Second * 10,
+				Transport: requestParam.tr,
+			}
+		} else {
+			client = &http.Client{
+				Timeout: time.Second * 10,
+			}
+		}
 	Loop:
 		for {
 			if time.Since(routineStartTime) < requestDuration {
@@ -274,6 +304,10 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 					ch <- fmt.Sprintf("%s%s Label %s", "Error ", err, label)
 				} else {
 					//fmt.Println(resp.Body)
+					fmt.Println(resp.StatusCode)
+					fmt.Println(resp.ContentLength)
+					// TODO if HTTP Proto version is given and res version not match should fail
+					fmt.Println(resp.Proto)
 					_, err := ioutil.ReadAll(resp.Body)
 					resp.Body.Close()
 					if err != nil {
@@ -309,6 +343,7 @@ func buildRequest(requestParam RequestParam) *http.Request {
 	if err != nil {
 		return nil
 	}
+	req.Proto = requestParam.proto
 	req.Header.Add("User-Agent", requestParam.ua)
 	return req
 }
