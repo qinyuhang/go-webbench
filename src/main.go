@@ -34,7 +34,7 @@ var supportArgsMap map[string]func(c string) int
 
 var requestParam RequestParam
 
-func initRequestParam(requestParam RequestParam) {
+func (requestParam *RequestParam) init() {
 	// init request params
 	requestParam.clients = 1
 	requestParam.ua = PROGRAM_NAME + PROGRAM_VERSION
@@ -45,7 +45,7 @@ func initRequestParam(requestParam RequestParam) {
 }
 
 func main() {
-	initRequestParam(requestParam)
+	requestParam.init()
 	//fmt.Println(requestParam)
 
 	// program consts
@@ -207,7 +207,7 @@ func main() {
 	if requestParam.clients != 0 {
 		//fmt.Println(requestParam)
 		for i := 0; i < requestParam.clients; i += 1 {
-			go sendHTTPRequest(requestParam.url, ch, coordinateCh, i)
+			go sendHTTPRequest(requestParam, ch, coordinateCh, i)
 		}
 	}
 	//for i := 0; i < requestParam.clients; i += 1 {
@@ -224,7 +224,7 @@ func main() {
 	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages per second")
 }
 
-func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label int) int {
+func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh chan int, label int) int {
 	// should put a struct that contain the res time and result in the res channel
 	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestParam.defaultTime) + "s")
 	if reqDErr == nil {
@@ -236,7 +236,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 		for {
 			if time.Since(routineStartTime) < requestDuration {
 				requestStartTime := time.Now()
-				reqBody := buildRequest(url, requestParam.method)
+				reqBody := buildRequest(requestParam.url, requestParam.method)
 
 				resp, err := client.Do(reqBody)
 
@@ -253,7 +253,7 @@ func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label 
 					}
 					//fmt.Printf("%s", robots)
 					endTime := time.Since(requestStartTime).Seconds()
-					ret := fmt.Sprint("Client No.", label, ",Fetch url ", url, ",runing ", endTime, "s")
+					ret := fmt.Sprint("Client No.", label, ",Fetch url ", requestParam.url, ",runing ", endTime, "s")
 					ch <- ret
 				}
 			} else {
