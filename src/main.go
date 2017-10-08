@@ -27,7 +27,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"sync"
+	_ "sync"
 	"time"
 )
 
@@ -314,10 +314,10 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- string, coordinateCh c
 					ch <- fmt.Sprintf("%s%s Label %s", "Error ", err, label)
 				} else {
 					//fmt.Println(resp.Body)
-					fmt.Println(resp.StatusCode)
-					fmt.Println(resp.ContentLength)
+					//fmt.Println(resp.StatusCode)
+					//fmt.Println(resp.ContentLength)
 					// TODO if HTTP Proto version is given and res version not match should fail
-					fmt.Println(resp.Proto)
+					//fmt.Println(resp.Proto)
 					_, err := ioutil.ReadAll(resp.Body)
 					resp.Body.Close()
 					if err != nil {
