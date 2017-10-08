@@ -24,16 +24,24 @@ make
 ```
 
 ## TODO
-Makefile install target
+- [ ] Makefile install target
 
-Force HTTP2 support
+- [x] Force HTTP2 support
 
-Switch UA support 
+- [x] Switch UA support 
 
--f switch support
+- [ ] -f switch support --force-reload
 
--d switch support
+- [ ] -F switch support --Field
 
--f switch support
+- [ ] --file
+using with POST send file
 
--p switch support
+- [ ] -i switch support --input
+read json or csv config
+
+- [ ] -d switch support --data
+
+- [ ] -p switch support --proxy
+
+- [ ] -o json output verbose request info
