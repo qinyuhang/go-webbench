@@ -34,6 +34,18 @@ import (
 var PROGRAM_VERSION string = "0.1"
 var PROGRAM_NAME string = "GoWebbench"
 
+type HttpRes struct {
+	showText string
+	resCode  int
+	resp     *http.Response
+}
+
+func (h *HttpRes) init(showText string, resp *http.Response) {
+	h.showText = showText
+	h.resCode = resp.StatusCode
+	h.resp = resp
+}
+
 type RequestParam struct {
 	clients     int
 	ua          string
@@ -44,10 +56,6 @@ type RequestParam struct {
 	proto       string
 	tr          *http.Transport
 }
-
-var supportArgsMap map[string]func(c string) int
-
-var requestParam RequestParam
 
 func (requestParam *RequestParam) init() {
 	// init request params
@@ -81,27 +89,8 @@ func initUAMap(userAgentMap *map[string]string) {
 	}
 }
 
-func main() {
-	requestParam.init()
-	//fmt.Println(requestParam)
-
-	// program consts
-	type safeCounter struct {
-		number int
-		m      sync.Mutex
-	}
-	var coordinateCh chan int
-	var ch chan string
-	var argsCount int
-	var usefulArgsCount int
-	var totalRequestCount uint64
-
-	argsMap := make(map[string]string)
-
-	userAgentMap := make(map[string]string)
-	initUAMap(&userAgentMap)
-
-	supportArgsMap = map[string]func(c string) int{
+func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam, userAgentMap map[string]string) {
+	*sam = map[string]func(c string) int{
 		"-c": func(c string) int {
 			// clients
 			if res, ok := strconv.Atoi(c); ok == nil {
@@ -199,6 +188,27 @@ func main() {
 			return 0
 		},
 	}
+}
+
+func main() {
+	var requestParam RequestParam
+	requestParam.init()
+	//fmt.Println(requestParam)
+
+	// program consts
+	var coordinateCh chan int
+	var ch chan string
+	var argsCount int
+	var usefulArgsCount int
+	var totalRequestCount uint64
+
+	argsMap := make(map[string]string)
+
+	userAgentMap := make(map[string]string)
+	initUAMap(&userAgentMap)
+
+	var supportArgsMap map[string]func(c string) int
+	initArgsMap(&supportArgsMap, &requestParam, userAgentMap)
 
 	// main program
 	argsCount = len(os.Args)
@@ -354,6 +364,7 @@ func usage() {
 		"  -r|--reload              Send reload request - Pragma: no-cache.\n",
 		"  -d|--data                Read POST body from csv or json file.\n",
 		"  -F|--Field               Read the Field added to request body from csv or json file.\n",
+		"  -i|--input				Read the file Path json file as config",
 		"  -t|--time <sec>          Run benchmark for <sec> seconds. Default 30.\n",
 		"  -p|--proxy <server:port> Use proxy server for request.\n",
 		"  -c|--clients <n>         Run <n> HTTP clients at once. Default one.\n",
