@@ -29,15 +29,21 @@ type RequestConst struct {
 	verbose     bool
 }
 
+var supportArgsMap map[string]func(c string) int
+
 var requestConst RequestConst
 
-func main() {
+func initRequestConst() {
 	// init request params
 	requestConst.clients = 1
 	requestConst.ua = PROGRAM_NAME + PROGRAM_VERSION
 	requestConst.method = "GET"
 	requestConst.defaultTime = 30
 	requestConst.verbose = false
+}
+
+func main() {
+	initRequestConst()
 	//fmt.Println(requestConst)
 
 	// program consts
@@ -45,7 +51,13 @@ func main() {
 		number int
 		m      sync.Mutex
 	}
-	var syncCh chan int
+	var coordinateCh chan int
+	var ch chan string
+	var arg_num int
+	var total_num int
+	var requestURL string
+	var total_request uint64
+
 	argsMap := make(map[string]string)
 
 	userAgentMap := map[string]string{
@@ -58,13 +70,8 @@ func main() {
 	supportArgsMap := map[string]func(c string) int{
 		"-c": func(c string) int {
 			// clients
-			res, ok := strconv.Atoi(c)
-			if ok != nil {
-				requestConst.clients = 0
-				syncCh = nil
-			} else {
+			if res, ok := strconv.Atoi(c); ok == nil {
 				requestConst.clients = res
-				syncCh = make(chan int, res)
 			}
 			return 1
 		},
@@ -149,9 +156,9 @@ func main() {
 	}
 
 	// main program
-	arg_num := len(os.Args)
-	total_num := 0
-	requestURL := ""
+	arg_num = len(os.Args)
+	total_num = 0
+	requestURL = ""
 	//fmt.Println(userAgentMap["iOSWechat"])
 	// Starting the main program
 	fmt.Println("GoWebbanch versioin ", PROGRAM_VERSION)
@@ -160,12 +167,13 @@ func main() {
 		//fmt.Println(i, v)
 		if supportArgsMap[v] != nil {
 			total_num += 1
-			// TODO judge should the -x have a extra param
 			if i+1 < arg_num && []byte(os.Args[i+1])[0] != []byte("-")[0] {
+				// has next param and next param is not start with "-"
 				if supportArgsMap[v](os.Args[i+1]) == 1 {
 					argsMap[v] = os.Args[i+1]
+					// only when ret == 1 means the next param is taken
+					i += 1
 				}
-				i += 1
 				//fmt.Println(v, " is got", os.Args[i+1])
 				//fmt.Println(ret)
 			} else {
@@ -192,8 +200,9 @@ func main() {
 		usage()
 		return
 	}
-	ch := make(chan string)
-	coordinateCh := make(chan int, requestConst.clients)
+	// init all channels
+	ch = make(chan string)
+	coordinateCh = make(chan int, requestConst.clients)
 	//failCh := make(chan string)
 	if requestConst.clients != 0 {
 		//fmt.Println(requestConst)
@@ -204,15 +213,15 @@ func main() {
 	//for i := 0; i < requestConst.clients; i += 1 {
 	//	fmt.Println(<-ch)
 	//}
-	total_request := 0
+	total_request = 0
 	for i := range ch {
 		if requestConst.verbose {
 			fmt.Println(i)
 		}
 		total_request += 1
 	}
-	fmt.Println("Total request ", total_request, " in ", requestConst.defaultTime, "s")
-	fmt.Println("Speed is", total_request/requestConst.defaultTime, " pages per second")
+	fmt.Println("Total request", total_request, "in", requestConst.defaultTime, "s")
+	fmt.Println("Speed is", total_request/uint64(requestConst.defaultTime), "pages per second")
 }
 
 func sendHTTPRequest(url string, ch chan<- string, coordinateCh chan int, label int) int {
