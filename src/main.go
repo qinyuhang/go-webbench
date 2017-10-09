@@ -71,9 +71,6 @@ type RequestParam struct {
 	// How many clients running
 	clients int
 
-	// user agent
-	ua string
-
 	// request Method
 	method string
 
@@ -97,14 +94,12 @@ type RequestParam struct {
 	tr *http.Transport
 
 	// all HTTP headers
-	// TODO move ua here
 	headers map[string]string
 }
 
 func (requestParam *RequestParam) init() {
 	// init request params
 	requestParam.clients = 1
-	requestParam.ua = fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION)
 	requestParam.method = "GET"
 	requestParam.defaultTime = 30
 	requestParam.verbose = false
@@ -118,12 +113,12 @@ func (requestParam *RequestParam) init() {
 		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 	}
 	requestParam.headers = make(map[string]string)
+	requestParam.headers["User-Agent"] = fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION)
 }
 
 func (requestParam RequestParam) String() string {
 	return fmt.Sprint(
 		"clients: ", requestParam.clients, "\n",
-		"ua: ", requestParam.ua, "\n",
 		"url: ", requestParam.url, "\n",
 		"method: ", requestParam.method, "\n",
 		"protocol: ", requestParam.proto, "\n",
@@ -155,7 +150,7 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 			return 1
 		},
 		"-u": func(c string) int {
-			requestParam.ua = userAgentMap[c]
+			requestParam.headers["User-Agent"] = userAgentMap[c]
 			return 1
 		},
 		"-V": func(c string) int {
@@ -452,7 +447,6 @@ func buildRequest(requestParam RequestParam) *http.Request {
 	req.Proto = requestParam.proto
 	req.ProtoMajor = requestParam.protoMajor
 	req.ProtoMinor = requestParam.protoMinor
-	req.Header.Add("User-Agent", requestParam.ua)
 	for i, v := range requestParam.headers {
 		req.Header.Add(i, v)
 	}

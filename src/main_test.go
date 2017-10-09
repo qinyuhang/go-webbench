@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	_ "fmt"
 	"testing"
 )
 
@@ -11,11 +9,6 @@ func TestInitParam(t *testing.T) {
 	rp.init()
 	if rp.clients != 1 {
 		t.Error("Init Error, check clients")
-		t.Fail()
-		return
-	}
-	if rp.ua != fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION) {
-		t.Error("Init Error, check ua")
 		t.Fail()
 		return
 	}
