@@ -7,8 +7,10 @@ main:
 gotest:
 	(cd src/ && go test -v)
 
-test: clean main
+test: clean main gotest
 	./build/gowebbench -t 2 http://www.baidu.com
+	./build/gowebbench -t 2 -f http://www.baidu.com
+	./build/gowebbench -t 2 -r http://www.baidu.com
 	./build/gowebbench -t 2 https://www.baidu.com
 	./build/gowebbench -t 2 -2 https://http2.golang.org/reqinfo
 
