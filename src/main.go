@@ -95,6 +95,10 @@ type RequestParam struct {
 
 	// http Transport object
 	tr *http.Transport
+
+	// all HTTP headers
+	// TODO move ua here
+	headers map[string]string
 }
 
 func (requestParam *RequestParam) init() {
@@ -113,6 +117,7 @@ func (requestParam *RequestParam) init() {
 	requestParam.tr = &http.Transport{
 		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 	}
+	requestParam.headers = make(map[string]string)
 }
 
 func (requestParam RequestParam) String() string {
@@ -124,6 +129,7 @@ func (requestParam RequestParam) String() string {
 		"protocol: ", requestParam.proto, "\n",
 		"isVerbose: ", requestParam.verbose, "\n",
 		"runningTime: ", requestParam.defaultTime, "\n",
+		"headers: ", requestParam.headers, "\n",
 	)
 }
 
@@ -240,6 +246,10 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		},
 		"-?": func(c string) int {
 			usage()
+			return 0
+		},
+		"-f": func(c string) int {
+			requestParam.headers["Pragma"] = "no-cache"
 			return 0
 		},
 	}
@@ -443,6 +453,9 @@ func buildRequest(requestParam RequestParam) *http.Request {
 	req.ProtoMajor = requestParam.protoMajor
 	req.ProtoMinor = requestParam.protoMinor
 	req.Header.Add("User-Agent", requestParam.ua)
+	for i, v := range requestParam.headers {
+		req.Header.Add(i, v)
+	}
 	return req
 }
 
