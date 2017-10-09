@@ -100,14 +100,16 @@ type RequestParam struct {
 func (requestParam *RequestParam) init() {
 	// init request params
 	requestParam.clients = 1
-	requestParam.ua = PROGRAM_NAME + PROGRAM_VERSION
+	requestParam.ua = fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION)
 	requestParam.method = "GET"
 	requestParam.defaultTime = 30
 	requestParam.verbose = false
 	requestParam.url = ""
+	// default protocol is HTTP/1.1
 	requestParam.proto = "HTTP/1.1"
 	requestParam.protoMajor = 1
 	requestParam.protoMinor = 1
+	// default HTTP/1.1 need disable HTTP/2.0 by set this
 	requestParam.tr = &http.Transport{
 		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 	}
@@ -254,6 +256,7 @@ func main() {
 	var argsCount int
 	var usefulArgsCount int
 	var totalRequestCount uint64
+	var totalRequestSize int64
 
 	argsMap := make(map[string]string)
 
@@ -268,7 +271,7 @@ func main() {
 	usefulArgsCount = 0
 	//fmt.Println(userAgentMap["iOSWechat"])
 	// Starting the main program
-	fmt.Println("GoWebbanch versioin ", PROGRAM_VERSION)
+	fmt.Println("GoWebbanch versioin", PROGRAM_VERSION)
 	for i := 0; i < argsCount; i += 1 {
 		v := os.Args[i]
 		//fmt.Println(i, v)
@@ -277,12 +280,10 @@ func main() {
 			if i+1 < argsCount && []byte(os.Args[i+1])[0] != []byte("-")[0] {
 				// has next param and next param is not start with "-"
 				if supportArgsMap[v](os.Args[i+1]) == 1 {
-					argsMap[v] = os.Args[i+1]
 					// only when ret == 1 means the next param is taken
+					argsMap[v] = os.Args[i+1]
 					i += 1
 				}
-				//fmt.Println(v, " is got", os.Args[i+1])
-				//fmt.Println(ret)
 			} else {
 				// --options .etc will go here
 				supportArgsMap[v]("")
@@ -311,17 +312,14 @@ func main() {
 	ch = make(chan HttpRes)
 	coordinateCh = make(chan int, requestParam.clients)
 	//failCh := make(chan string)
+	fmt.Println(requestParam)
 	if requestParam.clients != 0 {
-		//fmt.Println(requestParam)
 		for i := 0; i < requestParam.clients; i += 1 {
 			go sendHTTPRequest(requestParam, ch, coordinateCh, i)
 		}
 	}
-	//for i := 0; i < requestParam.clients; i += 1 {
-	//	fmt.Println(<-ch)
-	//}
 	totalRequestCount = 0
-	var totalRequestSize int64 = 0
+	totalRequestSize = 0
 	for i := range ch {
 		if requestParam.verbose {
 			fmt.Println(i)
