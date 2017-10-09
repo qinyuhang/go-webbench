@@ -61,7 +61,11 @@ type HttpRes struct {
 
 func (h *HttpRes) init(showText string, resp *http.Response, errNo int, errMsg string) {
 	h.showText = showText
-	h.resCode = resp.StatusCode
+	if resp != nil {
+		h.resCode = resp.StatusCode
+	} else {
+		h.resCode = 200
+	}
 	h.resp = resp
 	h.errNo = errNo
 	h.errMsg = errMsg
@@ -95,6 +99,9 @@ type RequestParam struct {
 
 	// all HTTP headers
 	headers map[string]string
+
+	// not read res body
+	force bool
 }
 
 func (requestParam *RequestParam) init() {
@@ -114,6 +121,7 @@ func (requestParam *RequestParam) init() {
 	}
 	requestParam.headers = make(map[string]string)
 	requestParam.headers["User-Agent"] = fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION)
+	requestParam.force = false
 }
 
 func (requestParam RequestParam) String() string {
@@ -125,6 +133,7 @@ func (requestParam RequestParam) String() string {
 		"isVerbose: ", requestParam.verbose, "\n",
 		"runningTime: ", requestParam.defaultTime, "\n",
 		"headers: ", requestParam.headers, "\n",
+		"isForce: ", requestParam.force, "\n",
 	)
 }
 
@@ -246,6 +255,10 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		},
 		"-r": func(c string) int {
 			requestParam.headers["Pragma"] = "no-cache"
+			return 0
+		},
+		"-f": func(c string) int {
+			requestParam.force = true
 			return 0
 		},
 	}
@@ -402,18 +415,21 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 						errNo = 1
 						errMsg = fmt.Sprint("Failed! Response Protocol Not match, want ", resp.Request.Proto, " get ", resp.Proto)
 					}
-					respBody, err := ioutil.ReadAll(resp.Body)
+					if !requestParam.force {
+						respBody, err := ioutil.ReadAll(resp.Body)
+						resp.Body.Close()
+						if err != nil {
+							log.Fatal(err)
+						}
+						if resp.ContentLength == -1 {
+							resp.ContentLength = int64(len(respBody))
+						}
+					}
 					resp.Body.Close()
-					if err != nil {
-						log.Fatal(err)
-					}
-					if resp.ContentLength == -1 {
-						resp.ContentLength = int64(len(respBody))
-					}
 					//fmt.Printf("%s", robots)
 					endTime := time.Since(requestStartTime).Seconds()
 					resData.init(
-						fmt.Sprint("Client No.", label, ",Fetch url ", requestParam.url, ",runing ", endTime, "s"),
+						fmt.Sprint("Client No.", label, ",Fetch url ", requestParam.url, " ,runing ", endTime, "s"),
 						resp,
 						errNo,
 						errMsg,
