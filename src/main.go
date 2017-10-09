@@ -472,18 +472,19 @@ func buildRequest(requestParam RequestParam) *http.Request {
 
 func usage() {
 	x := fmt.Sprint("webbench [option]... URL\n",
-		"  -f|--force               Don't wait for reply from server.\n",
-		"  -r|--reload              Send reload request - Pragma: no-cache.\n",
-		"  -d|--data                Read POST body from csv or json file.\n",
-		"  -F|--Field               Read the Field added to request body from csv or json file.\n",
-		"  -i|--input				Read the file Path json file as config",
-		"  -t|--time <sec>          Run benchmark for <sec> seconds. Default 30.\n",
-		"  -p|--proxy <server:port> Use proxy server for request.\n",
-		"  -c|--clients <n>         Run <n> HTTP clients at once. Default one.\n",
-		"  -9|--http09              Use HTTP/0.9 style requests.\n",
-		"  -1|--http10              Use HTTP/1.0 protocol.\n",
-		"  -2|--http11              Use HTTP/1.1 protocol.\n",
-		"  -u|--User-Agent          Change User-Agent.\n",
+		"  -f  |  --force               Don't wait for reply from server.\n",
+		"  -r  |  --reload              Send reload request - Pragma: no-cache.\n",
+		"  -d  |  --data                Read POST body from csv or json file.\n",
+		"  -F  |  --Field               Read the Field added to request body from csv or json file.\n",
+		"  -i  |  --input				Read the file Path json file as config",
+		"  -t  |  --time <sec>          Run benchmark for <sec> seconds. Default 30.\n",
+		"  -p  |  --proxy <server:port> Use proxy server for request.\n",
+		"  -c  |  --clients <n>         Run <n> HTTP clients at once. Default one.\n",
+		"  -0.9|  --http0.9           Use HTTP/0.9 style requests.\n",
+		"  -1  |  --http1.0             Use HTTP/0.9 style requests.\n",
+		"  -1.1|  --http1.1           Use HTTP/1.0 protocol.\n",
+		"  -2  |  --http2               Use HTTP/1.1 protocol.\n",
+		"  -u  |  --User-Agent          Change User-Agent.\n",
 		"  \t 1 for WeCaht iPhone\t 2 for WeChat Android\t 3 for iPhone Safari\n",
 		"  \t 4 for Android Chrome\t 5 for Windows IE11\t 6 for Windows IE10\n",
 		"  \t 7 for Windows Edge\t 8 for Windows Chrome\t 9 for Windows FireFox\n",
@@ -498,9 +499,9 @@ func usage() {
 		"  --put                    Use PUT request method.\n",
 		"  --connect                Use CONNECT request method.\n",
 		"  --patch                  Use PATCH request method.\n",
-		"  -?|-h|--help             This information.\n",
-		"  -V|--version             Display program version.\n",
-		"  -v|--verbose             Show Every Request.\n")
+		"  -?  |  -h|--help             This information.\n",
+		"  -V  |  --version             Display program version.\n",
+		"  -v  |  --verbose             Show Every Request.\n")
 	fmt.Println(x)
 }
 
