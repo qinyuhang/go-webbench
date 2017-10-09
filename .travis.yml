@@ -5,7 +5,6 @@ go:
 
 script:
     make &&
-    make gotest &&
     make test
 
 notifications:
