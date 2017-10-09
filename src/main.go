@@ -178,6 +178,7 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 			requestParam.tr = &http.Transport{
 				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 			}
+			requestParam.headers["Connection"] = "close"
 			return 0
 		},
 		"-2": func(c string) int {
@@ -243,7 +244,7 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 			usage()
 			return 0
 		},
-		"-f": func(c string) int {
+		"-r": func(c string) int {
 			requestParam.headers["Pragma"] = "no-cache"
 			return 0
 		},
