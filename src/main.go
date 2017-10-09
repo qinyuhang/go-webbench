@@ -393,10 +393,10 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 					// push a failed state to a counter
 					// TODO not only put this in but alsof signal the main goroutine it has a error
 					resData.init(
-						fmt.Sprintf("%s%s Label %s", "Error ", err, label),
+						fmt.Sprintf("%s%s Label %d", "Error ", err, label),
 						resp,
 						1,
-						fmt.Sprintf("%s%s Label %s", "Error ", err, label),
+						fmt.Sprintf("%s%s Label %d", "Error ", err, label),
 					)
 					ch <- resData
 				} else {
@@ -415,7 +415,13 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 						errNo = 1
 						errMsg = fmt.Sprint("Failed! Response Protocol Not match, want ", resp.Request.Proto, " get ", resp.Proto)
 					}
-					if !requestParam.force {
+					if requestParam.force {
+						// while have -f we want not spend time read it
+						go func() {
+							ioutil.ReadAll(resp.Body)
+							resp.Body.Close()
+						}()
+					} else {
 						respBody, err := ioutil.ReadAll(resp.Body)
 						resp.Body.Close()
 						if err != nil {
@@ -425,7 +431,6 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 							resp.ContentLength = int64(len(respBody))
 						}
 					}
-					resp.Body.Close()
 					//fmt.Printf("%s", robots)
 					endTime := time.Since(requestStartTime).Seconds()
 					resData.init(
@@ -459,6 +464,8 @@ func buildRequest(requestParam RequestParam) *http.Request {
 	req, err := http.NewRequest(requestParam.method, requestParam.url, nil)
 	//fmt.Println(method)
 	if err != nil {
+		fmt.Println("Error", err)
+		os.Exit(1)
 		return nil
 	}
 	req.Proto = requestParam.proto
