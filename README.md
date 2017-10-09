@@ -30,7 +30,9 @@ make
 
 - [x] Switch UA support 
 
-- [ ] -f switch support --force-reload
+- [x] -f switch support Pragma no-cache
+
+- [x] -r switch support --force-reload
 
 - [ ] -F switch support --Field
 
