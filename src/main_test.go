@@ -43,7 +43,7 @@ func TestHTTP(t *testing.T) {
 	requestParam.proto = "HTTP/1.1"
 	requestParam.defaultTime = 1
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan HttpRes)
+	ch := make(chan HTTPRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
@@ -66,7 +66,7 @@ func TestHTTPs(t *testing.T) {
 	requestParam.url = "https://www.baidu.com"
 	requestParam.defaultTime = 1
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan HttpRes)
+	ch := make(chan HTTPRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
@@ -93,7 +93,7 @@ func TestHTTP2(t *testing.T) {
 	requestParam.protoMinor = 0
 	requestParam.tr = nil
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan HttpRes)
+	ch := make(chan HTTPRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
@@ -117,7 +117,7 @@ func TestMultiClient(t *testing.T) {
 	requestParam.defaultTime = 1
 	requestParam.clients = 10
 	t.Log("\nRequest Param:\n", requestParam)
-	ch := make(chan HttpRes)
+	ch := make(chan HTTPRes)
 	cch := make(chan int, 1)
 	go sendHTTPRequest(requestParam, ch, cch, 0)
 	tr := 0
