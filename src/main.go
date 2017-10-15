@@ -44,7 +44,7 @@ var PROGRAM_NAME string = "GoWebbench"
 // and see if the is a error or not
 // if error stop the program and display error
 // if not show the showText in console
-type HttpRes struct {
+type HTTPRes struct {
 	// if -v is provided, print this text to console
 	showText string
 
@@ -64,7 +64,7 @@ type HttpRes struct {
 	errMsg string
 }
 
-func (h *HttpRes) init(showText string, resp *http.Response, errNo int, errMsg string) {
+func (h *HTTPRes) init(showText string, resp *http.Response, errNo int, errMsg string) {
 	h.showText = showText
 	if resp != nil {
 		h.resCode = resp.StatusCode
@@ -309,7 +309,7 @@ func main() {
 
 	// program consts
 	var coordinateCh chan int
-	var ch chan HttpRes
+	var ch chan HTTPRes
 	var argsCount int
 	var usefulArgsCount int
 	var totalRequestCount uint64
@@ -366,7 +366,7 @@ func main() {
 		return
 	}
 	// init all channels
-	ch = make(chan HttpRes)
+	ch = make(chan HTTPRes)
 	coordinateCh = make(chan int, requestParam.clients)
 	//failCh := make(chan string)
 	fmt.Println(requestParam)
@@ -400,7 +400,7 @@ func httpCodeHandler(httpCode int) {
 
 }
 
-func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh chan int, label int) int {
+func sendHTTPRequest(requestParam RequestParam, ch chan<- HTTPRes, coordinateCh chan int, label int) int {
 	// should put a struct that contain the res time and result in the res channel
 	requestDuration, reqDErr := time.ParseDuration(strconv.Itoa(requestParam.defaultTime) + "s")
 	if reqDErr == nil {
@@ -426,7 +426,7 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 
 				resp, err := client.Do(reqBody)
 
-				var resData HttpRes
+				var resData HTTPRes
 				if err != nil {
 					// push a failed state to a counter
 					// TODO not only put this in but alsof signal the main goroutine it has a error
