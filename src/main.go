@@ -17,16 +17,19 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	_ "encoding/json"
 	_ "encoding/xml"
 	"fmt"
+	_ "io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
+	_ "strings"
 	_ "sync"
 	"time"
 )
@@ -34,13 +37,15 @@ import (
 var PROGRAM_VERSION string = "0.1"
 var PROGRAM_NAME string = "GoWebbench"
 
+// HTTPRes ...
+// this Data type is suppose to be the data type that
+// all sendHttpRequest func put in first ch
+// main func take out of the value
+// and see if the is a error or not
+// if error stop the program and display error
+// if not show the showText in console
 type HttpRes struct {
-	// this Data type is suppose to be the data type that
-	// all sendHttpRequest func put in first ch
-	// main func take out of the value
-	// and see if the is a error or not
-	// if error stop the program and display error
-	// if not show the showText in console
+	// if -v is provided, print this text to console
 	showText string
 
 	// resCode is response.StatusCode
@@ -71,6 +76,8 @@ func (h *HttpRes) init(showText string, resp *http.Response, errNo int, errMsg s
 	h.errMsg = errMsg
 }
 
+// RequestParam ...
+// the data struct help build HTTP request
 type RequestParam struct {
 	// How many clients running
 	clients int
@@ -100,6 +107,9 @@ type RequestParam struct {
 	// all HTTP headers
 	headers map[string]string
 
+	// all body, will ignore when send GET HEAD OPTIONS
+	body []byte
+
 	// not read res body
 	force bool
 }
@@ -121,6 +131,7 @@ func (requestParam *RequestParam) init() {
 	}
 	requestParam.headers = make(map[string]string)
 	requestParam.headers["User-Agent"] = fmt.Sprint(PROGRAM_NAME, " version ", PROGRAM_VERSION)
+	requestParam.body = nil
 	requestParam.force = false
 }
 
@@ -260,6 +271,33 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		"-f": func(c string) int {
 			requestParam.force = true
 			return 0
+		},
+		"-F": func(c string) int {
+			// c is a string of JSON
+			fmt.Println(c)
+			jsonSlice := []byte(c)
+			fmt.Println(jsonSlice)
+			requestParam.body = jsonSlice
+			//dec := json.NewDecoder(strings.NewReader(c))
+			//for {
+			//	t, err := dec.Token()
+			//	if err == io.EOF {
+			//		break
+			//	}
+			//	if err != nil {
+			//		log.Fatal(err)
+			//	}
+			//	fmt.Printf("%T: %v", t, t)
+			//	if fmt.Sprintf("%T", t) != "json.Delim" && fmt.Sprintf("%v", t) == "{" {
+			//		// Start of a json Object could be the very first or some value
+			//
+			//	}
+			//	if dec.More() {
+			//		fmt.Printf(" (more)")
+			//	}
+			//	fmt.Printf("\n")
+			//}
+			return 1
 		},
 	}
 }
@@ -461,7 +499,7 @@ func sendHTTPRequest(requestParam RequestParam, ch chan<- HttpRes, coordinateCh 
 
 func buildRequest(requestParam RequestParam) *http.Request {
 	// maybe should change the requestBody from string to *http.request
-	req, err := http.NewRequest(requestParam.method, requestParam.url, nil)
+	req, err := http.NewRequest(requestParam.method, requestParam.url, bytes.NewBuffer(requestParam.body))
 	//fmt.Println(method)
 	if err != nil {
 		fmt.Println("Error", err)
