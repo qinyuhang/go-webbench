@@ -278,6 +278,7 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 			jsonSlice := []byte(c)
 			fmt.Println(jsonSlice)
 			requestParam.body = jsonSlice
+			// 如果以key=value的query形式给出
 			//dec := json.NewDecoder(strings.NewReader(c))
 			//for {
 			//	t, err := dec.Token()
@@ -299,6 +300,13 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 			//}
 			return 1
 		},
+		"-H": func(c string) int {
+			// Header
+			// Param is key=value&key=value
+			// support both correct spell and all small spell and camelSpell and _ spell
+			// Must have a header map here
+			return 1
+		},
 	}
 }
 
@@ -313,6 +321,7 @@ func main() {
 	var argsCount int
 	var usefulArgsCount int
 	var totalRequestCount uint64
+	var failedRequestCount uint64
 	var totalRequestSize int64
 
 	argsMap := make(map[string]string)
@@ -377,22 +386,22 @@ func main() {
 	}
 	totalRequestCount = 0
 	totalRequestSize = 0
+	failedRequestCount = 0
 	for i := range ch {
 		if requestParam.verbose {
 			fmt.Println(i)
 		}
 		if i.errNo != 0 {
-			fmt.Print("\n", i.errMsg, "\n")
-			return
+			failedRequestCount += 1
 		}
 		if i.resp.ContentLength != -1 {
 			totalRequestSize += i.resp.ContentLength
 		}
 		totalRequestCount += 1
 	}
-	fmt.Println("Total request", totalRequestCount, "in", requestParam.defaultTime, "s")
-	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime), "pages/sec")
-	fmt.Println("Speed is", totalRequestCount/uint64(requestParam.defaultTime)*60, "pages/min")
+	fmt.Println("Total request", totalRequestCount, "; succeed", totalRequestCount-failedRequestCount, "; failed", failedRequestCount, "in", requestParam.defaultTime, "s")
+	fmt.Println("Speed is", int(float64(totalRequestCount)/float64(requestParam.defaultTime)), "pages/sec")
+	fmt.Println("Speed is", int(float64(totalRequestCount)*60/float64(requestParam.defaultTime)), "pages/min")
 	fmt.Println("Speed is", totalRequestSize/int64(requestParam.defaultTime), "bytes/sec")
 }
 
