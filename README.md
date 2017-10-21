@@ -8,12 +8,12 @@ This is a free software, see GNU Public License version 3 for details.
 
 ## Usage
 ```
-./main [-c clientNumber -t requestTimeInSecond --(httpMethod)] url
+./build/gowebbench [-c clientNumber -t requestTimeInSecond --(httpMethod)] url
 ```
 
 ## Show Help
 ```
-./main -h
+./build/gowebbench -h
 ```
 
 ## How To build
@@ -21,10 +21,11 @@ This is a free software, see GNU Public License version 3 for details.
 git clone https://github.com/qinyuhang/go-webbench.git
 cd go-webbench
 make
+make install
 ```
 
 ## TODO
-- [ ] Makefile install target
+- [x] Makefile install target
 
 - [x] Force HTTP2 support
 
@@ -47,3 +48,9 @@ read json or csv config
 - [ ] -p switch support --proxy
 
 - [ ] -o json output verbose request info
+
+- [ ] console color
+
+- [ ] more friendly switch like [httpie](https://httpie.org)
+
+- [ ] json res checker
