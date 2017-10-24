@@ -274,10 +274,19 @@ func initArgsMap(sam *map[string]func(c string) int, requestParam *RequestParam,
 		},
 		"-F": func(c string) int {
 			// c is a string of JSON
-			fmt.Println(c)
-			jsonSlice := []byte(c)
-			fmt.Println(jsonSlice)
-			requestParam.body = jsonSlice
+			re := regexp.MustCompile(".+=.+&?")
+			if re.Find([]byte(c)) != nil {
+				// key=value给出
+				requestParam.body = []byte(c)
+				requestParam.headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8"
+			} else {
+				//fmt.Println(c)
+				jsonSlice := []byte(c)
+				//fmt.Println(jsonSlice)
+				requestParam.body = jsonSlice
+				requestParam.headers["Content-Type"] = "application/json; charset=utf-8"
+			}
+
 			// 如果以key=value的query形式给出
 			//dec := json.NewDecoder(strings.NewReader(c))
 			//for {
@@ -394,7 +403,7 @@ func main() {
 		if i.errNo != 0 {
 			failedRequestCount += 1
 		}
-		if i.resp.ContentLength != -1 {
+		if i.resp != nil && i.resp.ContentLength != -1 {
 			totalRequestSize += i.resp.ContentLength
 		}
 		totalRequestCount += 1
